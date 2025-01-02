@@ -1,6 +1,6 @@
 import unittest
-from Unit_download import download, split
-from TheAlgorithm import TheAlgorithm
+from ..src.Unit_download import download, split
+from ..src.TheAlgorithm import TheAlgorithm
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 class TestPredict(unittest.TestCase):
