@@ -1,4 +1,6 @@
 import unittest
+from Unit_download import download, split
+from TheAlgorithm import TheAlgorithm
 
 class TestRuntime(unittest.TestCase):
     def test_runtime(self):
