@@ -1,48 +1,31 @@
-from functools import wraps
-import logging
-import time
+from src.Unit_download import download, split
+from src.TheAlgorithm import TheAlgorithm
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
-def my_logger(orig_func):
-    logging.basicConfig(filename=f'{orig_func.__name__}.log', level=logging.INFO)
-    
-    @wraps(orig_func)
-    def wrapper(*args, **kwargs):
-        logging.info(f'Ran with args: {args}, and kwargs: {kwargs}')
-        return orig_func(*args, **kwargs)
-    return wrapper
+def main():
+    # Daten laden
+    X, y = download()
+    X_train, y_train, X_test, y_test = split(X, y, split_ratio=60000)
 
-def my_timer(orig_func):
-    @wraps(orig_func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = orig_func(*args, **kwargs)
-        end_time = time.time()
-        logging.info(f'{orig_func.__name__} ran in: {end_time - start_time:.4f} sec')
-        return result
-    return wrapper
+    # Modell trainieren und testen
+    model = TheAlgorithm(X_train, y_train, X_test, y_test)
+    model.fit()
+    predictions = model.predict()
 
-from sklearn.datasets import fetch_openml
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import MinMaxScaler
+    # Ergebnisse berechnen
+    train_accuracy = accuracy_score(y_train, model.model.predict(X_train))
+    test_accuracy = accuracy_score(y_test, predictions)
+    train_conf_matrix = confusion_matrix(y_train, model.model.predict(X_train))
+    test_conf_matrix = confusion_matrix(y_test, predictions)
+    class_report = classification_report(y_test, predictions)
 
-class TheAlgorithm:
-    def __init__(self, X_train, y_train, X_test, y_test):
-        self.X_train = X_train
-        self.y_train = y_train
-        self.X_test = X_test
-        self.y_test = y_test
+    # Ergebnisse in Datei speichern
+    with open("ausgabe.txt", "w") as f:
+        f.write(f"Train Accuracy: {train_accuracy * 100:.2f}%\n")
+        f.write(f"Train confusion matrix:\n{train_conf_matrix}\n\n")
+        f.write(f"Classification report for classifier:\n{class_report}\n")
+        f.write(f"Test Accuracy: {test_accuracy * 100:.2f}%\n")
+        f.write(f"Test confusion matrix:\n{test_conf_matrix}\n")
 
-    @my_logger
-    @my_timer
-    def fit(self):
-        scaler = MinMaxScaler()
-        self.X_train = scaler.fit_transform(self.X_train)
-        self.X_test = scaler.transform(self.X_test)
-
-        self.model = LogisticRegression()
-        self.model.fit(self.X_train, self.y_train)
-
-    @my_logger
-    @my_timer
-    def predict(self, X):
-        return self.model.predict(X
+if __name__ == "__main__":
+    main()
