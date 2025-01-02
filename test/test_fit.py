@@ -1,6 +1,7 @@
 import unittest
-from src.Unit_download import download, split
-from src.TheAlgorithm import TheAlgorithm
+from Unit_download import download, split
+from TheAlgorithm import TheAlgorithm
+
 
 class TestFit(unittest.TestCase):
     def test_fit_function(self):
