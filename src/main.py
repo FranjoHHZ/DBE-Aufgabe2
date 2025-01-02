@@ -1,5 +1,5 @@
-from src.Unit_download import download, split
-from src.TheAlgorithm import TheAlgorithm
+from Unit_download import download, split
+from TheAlgorithm import TheAlgorithm
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 def main():
