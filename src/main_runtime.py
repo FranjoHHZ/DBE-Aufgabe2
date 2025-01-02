@@ -1,6 +1,7 @@
 import time
-from src.Unit_download import download, split
-from src.TheAlgorithm import TheAlgorithm
+from Unit_download import download, split
+from TheAlgorithm import TheAlgorithm
+
 
 def measure_runtime():
     X, y = download()
