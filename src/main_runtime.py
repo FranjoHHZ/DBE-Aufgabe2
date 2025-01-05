@@ -1,26 +1,43 @@
-import time
-from Unit_download import download, split
-from TheAlgorithm import TheAlgorithm
+from decorators import my_logger, my_timer
+from Unit_download import Normalize, split
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report
 
-def measure_runtime():
-    X, y = download()
-    X_train, y_train, X_test, y_test = split(X, y, split_ratio=60000)
-    model = TheAlgorithm(X_train, y_train, X_test, y_test)
-
-    # Laufzeit messen
-    start_time = time.time()
-    model.fit()
-    end_time = time.time()
-
-    runtime = end_time - start_time
-
-    # Laufzeit im Hauptverzeichnis speichern
-    with open("baseline_runtime.txt", "w") as f:
-        f.write(f"{runtime}\n")
+class TheAlgorithm(object):
+  
+    @my_logger
+    @my_timer
+    def __init__(self, X_train, y_train, X_test, y_test):  
+      self.X_train, self.y_train, self.X_test, self.y_test = X_train, y_train, X_test, y_test    
+        
+    @my_logger
+    @my_timer
+    def fit(self): 
+        normalizer = Normalize()
+        self.X_train, self.X_test = normalizer.normalize(self.X_train, self.X_test)   
+        train_samples = self.X_train.shape[0]
+        self.classifier = LogisticRegression(
+            C=50. / train_samples,
+            multi_class='multinomial',
+            penalty='l1',
+            solver='saga',
+            tol=0.1,
+            class_weight='balanced',
+            )
+        self.classifier.fit(self.X_train, self.y_train)
+        self.train_y_predicted = self.classifier.predict(self.X_train)
+        self.train_accuracy = np.mean(self.train_y_predicted.ravel() == self.y_train.ravel()) * 100
+        self.train_confusion_matrix = confusion_matrix(self.y_train, self.train_y_predicted)        
+        return self.train_accuracy
     
-    # Laufzeit in der Konsole anzeigen
-    print(f"Laufzeit erfolgreich gemessen: {runtime:.2f} Sekunden")
-
-if __name__ == "__main__":
-    measure_runtime()
+    @my_logger
+    @my_timer
+    def predict(self):
+        self.test_y_predicted = self.classifier.predict(self.X_test) 
+        self.test_accuracy = np.mean(self.test_y_predicted.ravel() == self.y_test.ravel()) * 100 
+        self.test_confusion_matrix = confusion_matrix(self.y_test, self.test_y_predicted)        
+        self.report = classification_report(self.y_test, self.test_y_predicted)
+        print("Classification report for classifier:\n %s\n" % (self.report))
+        return self.test_accuracy
 
