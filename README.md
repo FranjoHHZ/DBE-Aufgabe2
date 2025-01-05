@@ -3,3 +3,5 @@
 + Implementierung von ML basierten SW Systemen
 + Betrieb und Ablauf von ML basierter Software transparent gestalten
 + Automatisches Testen von ML basierten SW Systeme
+
+https://hub.ovh2.mybinder.org/user/franjohhz-dbe-aufgabe-2.-81cihpge/lab
