@@ -1,31 +1,74 @@
-from Unit_download import download, split
+# Importieren notwendiger Bibliotheken
+import numpy as np
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report
+from decorators import my_logger, my_timer 
 from TheAlgorithm import TheAlgorithm
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import os
 
-def main():
-    # Daten laden
-    X, y = download()
-    X_train, y_train, X_test, y_test = split(X, y, split_ratio=60000)
+# Eventuell erforderliche zusätzliche Importe
+# from normalizer import Normalize
 
-    # Modell trainieren und testen
-    model = TheAlgorithm(X_train, y_train, X_test, y_test)
-    model.fit()
-    predictions = model.predict()
+# Funktion zum Herunterladen und Vorbereiten der MNIST-Daten
+def download_data():
+    mnist = fetch_openml('mnist_784', version=1, parser='auto')
+    X = mnist.data.astype('float64')
+    y = mnist.target
+    return X, y
 
-    # Ergebnisse berechnen
-    train_accuracy = accuracy_score(y_train, model.model.predict(X_train))
-    test_accuracy = accuracy_score(y_test, predictions)
-    train_conf_matrix = confusion_matrix(y_train, model.model.predict(X_train))
-    test_conf_matrix = confusion_matrix(y_test, predictions)
-    class_report = classification_report(y_test, predictions)
+class Normalize(object): 
+    def normalize(self, X_train, X_test):
+        self.scaler = MinMaxScaler()
+        X_train = self.scaler.fit_transform(X_train)
+        X_test  = self.scaler.transform(X_test)
+        return (X_train, X_test) 
+    
+    def inverse(self, X_train, X_val, X_test):
+        X_train = self.scaler.inverse_transform(X_train)
+        X_test  = self.scaler.inverse_transform(X_test)
+        return (X_train, X_test)   
 
-    # Ergebnisse in Datei speichern
-    with open("ausgabe.txt", "w") as f:
-        f.write(f"Train Accuracy: {train_accuracy * 100:.2f}%\n")
-        f.write(f"Train confusion matrix:\n{train_conf_matrix}\n\n")
-        f.write(f"Classification report for classifier:\n{class_report}\n")
-        f.write(f"Test Accuracy: {test_accuracy * 100:.2f}%\n")
-        f.write(f"Test confusion matrix:\n{test_conf_matrix}\n")
+def split(X,y, splitRatio):
+    X_train = X[:splitRatio]
+    y_train = y[:splitRatio]
+    X_test = X[splitRatio:]
+    y_test = y[splitRatio:]
+    return (X_train, y_train, X_test, y_test)      
 
-if __name__ == "__main__":
-    main()
+#The solution
+if __name__ == '__main__': 
+  
+  X,y = download_data()
+  print ('MNIST:', X.shape, y.shape)
+  
+  splitRatio = 60000
+  X_train, y_train, X_test, y_test = split(X,y,splitRatio) 
+
+  np.random.seed(31337)
+  ta = TheAlgorithm(X_train, y_train, X_test, y_test)
+  train_accuracy = ta.fit()
+  print()
+  print('Train Accuracy:', train_accuracy,'\n') 
+  print("Train confusion matrix:\n%s\n" % ta.train_confusion_matrix)
+  
+  test_accuracy = ta.predict()
+  print()
+  print('Test Accuracy:', test_accuracy,'\n') 
+  print("Test confusion matrix:\n%s\n" % ta.test_confusion_matrix)
+
+  # Speichern das Ergebnis in einer Datei im Unterverzeichnis 'data'
+  data_dir = 'data'
+  if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+
+  # Speichern der Konfusionsmatrizen im 'data' Verzeichnis
+  np.save(os.path.join(data_dir, 'train_confusion_matrix.npy'), ta.train_confusion_matrix)
+  np.save(os.path.join(data_dir, 'test_confusion_matrix.npy'), ta.test_confusion_matrix)
+
+  # Speichern der Genauigkeiten in eine Textdatei im 'data' Verzeichnis
+  with open(os.path.join(data_dir, 'accuracy.txt'), 'w') as f:
+     f.write(f'{train_accuracy}\n')
+     f.write(f'{test_accuracy}\n')
