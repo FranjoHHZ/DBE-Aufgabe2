@@ -1,3 +1,6 @@
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LogisticRegression
 from src.decorators import my_logger, my_timer
 from src.Unit_download import Normalize
